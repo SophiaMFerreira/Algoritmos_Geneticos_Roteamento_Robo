@@ -109,8 +109,7 @@ def encontraObjetivo(posicao, objetivo):
             coordenadaDestino[0] = movX + posicao[0];
             coordenadaDestino[1] = movY + posicao[1];
     if(tuple(coordenadaDestino) in obstaculos):
-        objCoordenadaDestino = geraMovimentoAleatorio(posicao);
-        posicao = objCoordenadaDestino[1][:];
+        posicao = geraMovimentoAleatorio(posicao);
     else:
         posicao = coordenadaDestino[:];
     rota.append(posicao);
@@ -127,8 +126,7 @@ def encontraObjetivo(posicao, objetivo):
         coordenadaDestino[0] = movX + posicao[0];
         coordenadaDestino[1] = movY + posicao[1];
     if(tuple(coordenadaDestino) in obstaculos):
-        objCoordenadaDestino = geraMovimentoAleatorio(posicao);
-        posicao = objCoordenadaDestino[1][:];
+        posicao = geraMovimentoAleatorio(posicao);
     else:
         posicao = coordenadaDestino[:];
     rota.append(posicao);
@@ -141,7 +139,7 @@ def geraMovimentoAleatorio(posicao):
         movX, movY = movimentos[movimento];
         coordenadaDestino[0] = movX + posicao[0];
         coordenadaDestino[1] = movY + posicao[1];
-    return [0, coordenadaDestino];    
+    return coordenadaDestino;    
 
 def removeCiclos(rota, inicioCorte, fimCorte):
     if(len(rota) < 2):
@@ -195,41 +193,35 @@ def mutacao(pai1):
         
 
 def crossover(pai1, pai2, movimentoBase):
-    totMax=min(len(pai1), len(pai2))
-    corte= random.randint(5,totMax-5)
-    filho=pai1[0:corte]
-    passo=inicio[:]
-    for i in filho:
-        cx, cy = movimentos[i]
-        passo[0]+=cx
-        passo[1]+=cy
-    for i in range(corte, len(pai2)):
-        npasso=passo[:]
-        cx, cy = movimentos[pai2[i]]
-        npasso[0]+=cx
-        npasso[1]+=cy
-        if (npasso[0]<=objetivo[0] and npasso[1]<=objetivo[1]):
-            filho.append(pai2[i])
-            passo=npasso[:]
-        if (passo[0]==objetivo[0] and passo[1]==objetivo[1]):
-            return(filho)
-    while (passo != objetivo):
-        movimentoRandomico=random.randint(0,len(movimentoBase)-1) 
-        npasso=passo[:]
-        npasso[0]=passo[0]+movimentos[movimentoBase[movimentoRandomico]][0]
-        npasso[1]=passo[1]+movimentos[movimentoBase[movimentoRandomico]][1]
-        if (npasso[0]<=objetivo[0] and npasso[1]<=objetivo[1]):
-            filho.append(movimentoBase[movimentoRandomico])
-            passo=npasso[:]
-        if (passo[0]==objetivo[0] and passo[1]==objetivo[1]):
-            return(filho)
+    if len(pai1) <= len(pai2):
+        tamanhoMenorRota = len(pai1);
+    else: 
+        tamanhoMenorRota = len(pai2);
+    pontoCorte = random.randint(1,tamanhoMenorRota-1);
+    rotaPai1 = pai1[:pontoCorte][:];
+    rotaPai2 = pai2[pontoCorte:][:];
+    coordenadaDestino = rotaPai1[-1][:];
+    posicao = rotaPai1[-1][:];
+    for j in range(1, 4):
+       movX, movY = movimentos[j];
+       coordenadaDestino[0] = movX + posicao[0];
+       coordenadaDestino[1] = movY + posicao[1];
+       if coordenadaDestino == rotaPai2[0]:
+           rotaFilho = rotaPai1[:] + rotaPai2[:];
+           return rotaFilho;
+    while(posicao != rotaPai2[0]):
+        rotaPai1, posicao =  encontraObjetivo(posicao, rotaPai2[0]);
+    rotaFilho = rotaPai1[:] + rotaPai2[:];  
+    return rotaFilho;
 
 #------------------------------------------------------------------------------------------------------------------------------------------ 
 melhorCusto = 99999;
 melhorRota = [];
 
 tamanhoPopulacao = 100
-geracoes = 1;
+geracoes = 1000;
+filhosCrossover = 1
+filhosMutacao = 60
 populacao = []
 qntPais = 10
 
@@ -266,6 +258,7 @@ for iPopulacao in range(0, tamanhoPopulacao):
         melhorCusto = custo
         
 #Geração das novas populações (gerações)
+#####################################################################################################################for iGeracao in range(0, geracoes):
 #Escolha dos pais
 random.shuffle(populacao);
 torneio = [];
@@ -277,39 +270,25 @@ for i in range(0, 10):
     torneio.append(etapaTorneio[0][:]);
 populacao = torneio[:];
 
-    
+#Crossover
+for i in range(0, filhosCrossover):
+    pai1 = random.randint(0, qntPais-1)
+    pai2 = random.randint(0, qntPais-1)
+    while (pai1 == pai2):
+        pai1 = random.randint(0, qntPais-1)
+    pai1 = populacao[pai1][1]
+    pai2 = populacao[pai2][1]
+    filho = crossover(pai1, pai2, movimentoBase)
+    custo = calculaCusto(filho)
+    populacao.append([custo, filho])
+    if custo < melhorCusto:
+        melhorRota = rota[:]
+        melhorCusto = custo
+        #iGeracao = 0
+        print('Melhor custo (Crossover):', melhorCusto)
 
     
-'''
-for iGeracao in range(0, geracoes):
-    populacao = random.shuffle(populacao);
-    torneio = [];
-    for i in range(1, 20):
-        torneio.append(populacao[:5][:]);
-        populacao = populacao[5:];
-    
-    
-
-    # Crossover
-    cont=0
-    txCros=60
-    while (cont<txCros):
-        cont+=1
-        pai1=random.randint(0,qntPais-1)
-        pai2=random.randint(0,qntPais-1)
-        while (pai1==pai2):
-            pai1=random.randint(0,qntPais-1)
-        pai1=populacao[pai1][1]
-        pai2=populacao[pai2][1]
-        filho=crossover(pai1,pai2,movimentoBase)
-        custo=aptidao(filho)
-        populacao.append([custo, filho])
-        if custo<melhorCusto:
-            Best=filho[:]
-            melhorCusto=custo
-            contPop=0
-            print('cros', melhorCusto)
-    
+'''    
     # Mutação
     cont=0
     txMut=30
