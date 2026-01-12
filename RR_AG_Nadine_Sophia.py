@@ -229,6 +229,7 @@ melhorCusto = 99999;
 melhorRota = [];
 
 tamanhoPopulacao = 100
+geracoes = 1;
 populacao = []
 qntPais = 10
 
@@ -263,10 +264,68 @@ for iPopulacao in range(0, tamanhoPopulacao):
     if custo < melhorCusto:
         melhorRota = rota[:]
         melhorCusto = custo
+        
+#Geração das novas populações (gerações)
+#Escolha dos pais
+random.shuffle(populacao);
+torneio = [];
+for i in range(0, 10):
+    etapaTorneio = [];
+    etapaTorneio = populacao[:5][:];
+    populacao = populacao[5:][:];
+    etapaTorneio.sort(key=lambda pai: pai[0]);  
+    torneio.append(etapaTorneio[0][:]);
+populacao = torneio[:];
 
+    
+
+    
 '''
-contPop=0
-parada=1000
+for iGeracao in range(0, geracoes):
+    populacao = random.shuffle(populacao);
+    torneio = [];
+    for i in range(1, 20):
+        torneio.append(populacao[:5][:]);
+        populacao = populacao[5:];
+    
+    
+
+    # Crossover
+    cont=0
+    txCros=60
+    while (cont<txCros):
+        cont+=1
+        pai1=random.randint(0,qntPais-1)
+        pai2=random.randint(0,qntPais-1)
+        while (pai1==pai2):
+            pai1=random.randint(0,qntPais-1)
+        pai1=populacao[pai1][1]
+        pai2=populacao[pai2][1]
+        filho=crossover(pai1,pai2,movimentoBase)
+        custo=aptidao(filho)
+        populacao.append([custo, filho])
+        if custo<melhorCusto:
+            Best=filho[:]
+            melhorCusto=custo
+            contPop=0
+            print('cros', melhorCusto)
+    
+    # Mutação
+    cont=0
+    txMut=30
+    while(cont<txMut):
+        cont+=1
+        pai1=random.randint(0,qntPais-1)
+        pai1=populacao[pai1][1]
+        filho=mutacao(pai1)
+        custo=aptidao(filho)
+        populacao.append([custo, filho])
+        if custo<melhorCusto:
+            Best=filho[:]
+            melhorCusto=custo
+            contPop=0
+            print('mut', melhorCusto)
+    
 while(contPop<parada):
     contPop+=1
     
