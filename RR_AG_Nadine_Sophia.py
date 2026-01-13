@@ -1,17 +1,13 @@
 '''
-Projeto AG
-
-Tam população = 100
-Tot pais = 10
-Seleção dos pais = elitismo
-Tx mutação = 30
-Tx crossover = 60
-
-'''
-
-'''
-    Projeto Simulated Annealing: Nadine Vasconcellos e Sophia Ferreira
+    Projeto Algoritmos Genéticos: Nadine Vasconcellos e Sophia Ferreira
     Problema de Roteamento de Robô
+     
+     Tamanho da população = 100
+     Quantidade de pais = 10
+     Seleção dos pais = torneio
+     Taxa de mutação = 30
+     Taxa de crossover = 60
+
 '''
 
 import random
@@ -96,7 +92,7 @@ def calculaCusto(rota):
 
     return custo
 
-def encontraObjetivo(posicao, objetivo):
+def encontraObjetivo(posicao, objetivo, rota_atual):
     coordenadaDestino = posicao[:];
     
     if(posicao[1] < objetivo[1]):
@@ -111,10 +107,10 @@ def encontraObjetivo(posicao, objetivo):
         posicao = geraMovimentoAleatorio(posicao);
     else:
         posicao = coordenadaDestino[:];
-    rota.append(posicao);
+    rota_atual.append(posicao);
     
     if(posicao == objetivo):
-        return rota, posicao;
+        return rota_atual, posicao;
     
     if(posicao[0] < objetivo[0]):
         movX, movY = movimentos[2];
@@ -128,8 +124,8 @@ def encontraObjetivo(posicao, objetivo):
         posicao = geraMovimentoAleatorio(posicao);
     else:
         posicao = coordenadaDestino[:];
-    rota.append(posicao);
-    return rota, posicao;   
+    rota_atual.append(posicao);
+    return rota_atual, posicao;   
 
 def geraMovimentoAleatorio(posicao):
     coordenadaDestino = [-1,-1];
@@ -141,33 +137,25 @@ def geraMovimentoAleatorio(posicao):
     return coordenadaDestino;    
 
 def removeCiclos(rota, inicioCorte, fimCorte):
-    if(len(rota) < 2):
+    if(inicioCorte >= len(rota) or fimCorte >= len(rota)):
         return rota;
     
-    if(rota[inicioCorte] in rota[fimCorte:]):
-        return removeCiclos(rota, inicioCorte, fimCorte + 1);
-        
-    elif(inicioCorte != fimCorte):
-        rota = rota[:inicioCorte + 1] + rota[fimCorte:];
-        inicioCorte = 0;
-        fimCorte = 0;
-        return rota;
+    if(inicioCorte < fimCorte and rota[inicioCorte] in rota[fimCorte:]):
+        return rota[:inicioCorte + 1] + rota[fimCorte + 1:];
+    
+    return removeCiclos(rota, inicioCorte, fimCorte + 1);
 
 def mutacao(pai):
     filho = pai[:];
-    for coordenada in enumerate(filho):
-        if tuple(coordenada) in obstaculos:
-            rotaAntesColisao = filho[:coordenada];
-            rotaAposColisao = filho[coordenada + 1:];
+    for i in range(0, len(filho)-1):
+        if tuple(filho[i]) in obstaculos:
+            rotaAntesColisao = filho[:i];
+            rotaAposColisao = filho[i + 1:];
             posicao = geraMovimentoAleatorio(rotaAntesColisao[-1]);
             rotaAntesColisao.append(posicao);
             while(posicao != rotaAposColisao[0]):
-                rotaAntesColisao, posicao =  encontraObjetivo(posicao, rotaAposColisao[0]);
-            filho = rotaAntesColisao[:] + rotaAposColisao[1:];
-    i = 0;
-    while(i < len(filho)):
-        filho = removeCiclos(filho, i, 0)
-        i += 1;
+                rotaAntesColisao, posicao =  encontraObjetivo(posicao, rotaAposColisao[0], rotaAntesColisao);
+            filho = rotaAntesColisao[:] + rotaAposColisao[1:]
     return filho
         
 
@@ -189,7 +177,7 @@ def crossover(pai1, pai2):
            rotaFilho = rotaPai1[:] + rotaPai2[:];
            return rotaFilho;
     while(posicao != rotaPai2[0]):
-        rotaPai1, posicao =  encontraObjetivo(posicao, rotaPai2[0]);
+        rotaPai1, posicao =  encontraObjetivo(posicao, rotaPai2[0], rotaPai1);
     rotaFilho = rotaPai1[:] + rotaPai2[:];  
     return rotaFilho;
 
@@ -229,7 +217,7 @@ for iPopulacao in range(0, tamanhoPopulacao):
         if (coordenadaDestino[0] <= objetivo[0] and coordenadaDestino[1] <= objetivo[1]):
             posicao = coordenadaDestino[:];
             rota.append(posicao)
-        movimentoRandomico = random.randint(0,len(movimentoBase)-1)      
+        movimentoRandomico = random.randint(0,len(movimentoBase)-1)
     custo = calculaCusto(rota)
     populacao.append([custo, rota])
     if custo < melhorCusto:
@@ -258,6 +246,10 @@ for iGeracao in range(0, geracoes):
         pai1 = populacao[pai1][1]
         pai2 = populacao[pai2][1]
         filho = crossover(pai1, pai2)
+        '''i = 0;
+        while(i < len(filho)):
+            filho = removeCiclos(filho, i, 0)
+            i += 1;'''
         custo = calculaCusto(filho)
         populacao.append([custo, filho])
         if custo < melhorCusto:
@@ -271,6 +263,10 @@ for iGeracao in range(0, geracoes):
         pai1 = random.randint(0, qntPais-1)
         pai1 = populacao[pai1][1]
         filho = mutacao(pai1)
+        '''i = 0;
+        while(i < len(filho)):
+            filho = removeCiclos(filho, i, 0)
+            i += 1;'''
         custo = calculaCusto(filho)
         populacao.append([custo, filho])
         if custo < melhorCusto:
@@ -280,5 +276,5 @@ for iGeracao in range(0, geracoes):
             print('Melhor custo (Mutação):', melhorCusto)
 
 imprimeGrafico(melhorRota);
-print("\n========== Resultado GA ==========")
+print("\n========== Resultado AG ==========")
 print("Melhor custo Final: ", melhorCusto);
